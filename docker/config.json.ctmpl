@@ -1,0 +1,45 @@
+{{- $svc := "docker-server-configs/services/bookbrainz.json/"}}
+{
+	"site": {
+		"proxyTrust": true,
+		"log": "debug"
+	},
+	"musicbrainz": {
+		"clientID": "{{keyOrDefault (print $svc "musicbrainz_client_id") ""}}",
+		"clientSecret": "{{keyOrDefault (print $svc "musicbrainz_client_secret") ""}}",
+		"callbackURL": "{{keyOrDefault (print $svc "musicbrainz_callback_url") "https://bookbrainz.org/cb"}}"
+	},
+	"session": {
+		"secret": "{{keyOrDefault (print $svc "session_secret") ""}}",
+		"secure": false,
+		"redis": {
+{{- if service "bookbrainz-redis"}}
+{{- with index (service "bookbrainz-redis") 0}}
+			"host": "{{.Address}}",
+			"port": {{.Port}},
+{{- end}}
+{{- end}}
+			"ttl": {{keyOrDefault (print $svc "redis_ttl") "3600"}}
+		}
+	},
+	"database": {
+		"client": "pg",
+		"connection": {
+{{- if service "pgbouncer-master"}}
+{{- with index (service "pgbouncer-master") 0}}
+			"host": "{{.Address}}",
+			"port": {{.Port}},
+{{- end}}
+{{- end}}
+			"database": "{{keyOrDefault (print $svc "postgres_database") "bookbrainz"}}",
+			"user": "{{keyOrDefault (print $svc "postgres_user") "bookbrainz"}}"
+		}
+	},
+	"search": {
+{{- if service "elasticsearch"}}
+{{- with index (service "elasticsearch") 0}}
+		"host": "{{.Address}}:{{.Port}}"
+{{- end}}
+{{- end}}
+	}
+}
